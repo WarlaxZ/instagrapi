@@ -71,6 +71,7 @@ SUPPORTED_CAPABILITIES = [
 
 # Realistic device profiles with proper correlations
 app_version = "399.0.0.51.85" # TODO I added, was 269.0.0.18.75
+app_version_code = "380507043" # TODO I added, was 314665256
 # TODO TODO - The version strings and devices are wrong here and could do with improving
 REALISTIC_DEVICES = [
     {
@@ -83,7 +84,7 @@ REALISTIC_DEVICES = [
         "device": "SM-G991B",
         "model": "Galaxy S21 5G",
         "cpu": "exynos2100",
-        "version_code": "314665256",
+        "version_code": app_version_code,
     },
     {
         "app_version": app_version,
@@ -95,7 +96,7 @@ REALISTIC_DEVICES = [
         "device": "oriole",
         "model": "Pixel 6",
         "cpu": "tensor",
-        "version_code": "314665256",
+        "version_code": app_version_code,
     },
     {
         "app_version": app_version,
@@ -107,7 +108,7 @@ REALISTIC_DEVICES = [
         "device": "OnePlus9",
         "model": "LE2113",
         "cpu": "snapdragon888",
-        "version_code": "314665256",
+        "version_code": app_version_code,
     },
     {
         "app_version": app_version,
@@ -119,7 +120,7 @@ REALISTIC_DEVICES = [
         "device": "cmi",
         "model": "Mi 10",
         "cpu": "snapdragon865",
-        "version_code": "314665256",
+        "version_code": app_version_code,
     },
     {
         "app_version": app_version,
@@ -131,7 +132,7 @@ REALISTIC_DEVICES = [
         "device": "SM-A525F",
         "model": "Galaxy A52s 5G",
         "cpu": "snapdragon778G",
-        "version_code": "314665256",
+        "version_code": app_version_code,
     },
     {
         "app_version": app_version,
@@ -143,7 +144,7 @@ REALISTIC_DEVICES = [
         "device": "OP4F2F",
         "model": "Find X3 Pro",
         "cpu": "snapdragon888",
-        "version_code": "314665256",
+        "version_code": app_version_code,
     },
     {
         "app_version": app_version,
@@ -155,7 +156,7 @@ REALISTIC_DEVICES = [
         "device": "ELS-NX9",
         "model": "P40 Pro",
         "cpu": "kirin990",
-        "version_code": "314665256",
+        "version_code": app_version_code,
     },
     {
         "app_version": app_version,
@@ -167,7 +168,7 @@ REALISTIC_DEVICES = [
         "device": "XQ-AT52",
         "model": "Xperia 1 II",
         "cpu": "snapdragon865",
-        "version_code": "314665256",
+        "version_code": app_version_code,
     },
     {
         "app_version": app_version,
@@ -179,7 +180,7 @@ REALISTIC_DEVICES = [
         "device": "RMX3366",
         "model": "GT Master Edition",
         "cpu": "snapdragon778G",
-        "version_code": "314665256",
+        "version_code": app_version_code,
     },
     {
         "app_version": app_version,
@@ -191,7 +192,7 @@ REALISTIC_DEVICES = [
         "device": "V2057",
         "model": "X60 Pro",
         "cpu": "exynos1080",
-        "version_code": "314665256",
+        "version_code": app_version_code,
     },
     {
         "app_version": app_version,
@@ -203,7 +204,7 @@ REALISTIC_DEVICES = [
         "device": "Spacewar",
         "model": "Phone (1)",
         "cpu": "snapdragon778G",
-        "version_code": "314665256",
+        "version_code": app_version_code,
     },
     {
         "app_version": app_version,
@@ -215,7 +216,7 @@ REALISTIC_DEVICES = [
         "device": "nio",
         "model": "Edge 20 Pro",
         "cpu": "snapdragon870",
-        "version_code": "314665256",
+        "version_code": app_version_code,
     },
 ]
 
