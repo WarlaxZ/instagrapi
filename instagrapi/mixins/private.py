@@ -83,6 +83,7 @@ class PrivateRequestMixin:
     domain = config.API_DOMAIN
     last_response = None
     last_json = {}
+    connection_type = "WIFI"
 
     def __init__(self, *args, **kwargs):
         # setup request session with retries
@@ -113,23 +114,69 @@ class PrivateRequestMixin:
 
     def small_delay(self):
         """
-        Small Delay
+        Small Delay with human-like patterns
 
         Returns
         -------
         Void
         """
-        time.sleep(random.uniform(0.75, 3.75))
+        delay = self.get_human_like_delay("small")
+        time.sleep(delay)
 
     def very_small_delay(self):
         """
-        Very small delay
+        Very small delay with human-like patterns
 
         Returns
         -------
         Void
         """
-        time.sleep(random.uniform(0.175, 0.875))
+        delay = self.get_human_like_delay("very_small")
+        time.sleep(delay)
+        
+    def get_human_like_delay(self, delay_type: str) -> float:
+        """
+        Generate human-like delays based on time of day and activity patterns
+        
+        Parameters
+        ----------
+        delay_type: str
+            Type of delay ("very_small", "small", "medium", "large")
+            
+        Returns
+        -------
+        float
+            Delay in seconds
+        """
+        import datetime
+        current_hour = datetime.datetime.now().hour
+        
+        # Base delays for different types
+        base_delays = {
+            "very_small": (0.2, 1.0),
+            "small": (1.0, 4.0),
+            "medium": (3.0, 8.0),
+            "large": (8.0, 15.0)
+        }
+        
+        min_delay, max_delay = base_delays.get(delay_type, (1.0, 3.0))
+        
+        # Adjust delays based on time of day (humans are slower at night/early morning)
+        if 1 <= current_hour <= 6:  # Late night/early morning
+            min_delay *= 1.5
+            max_delay *= 2.0
+        elif 22 <= current_hour or current_hour == 0:  # Late evening
+            min_delay *= 1.2
+            max_delay *= 1.5
+        elif 9 <= current_hour <= 17:  # Work hours - faster responses
+            min_delay *= 0.8
+            max_delay *= 0.9
+            
+        # Add occasional longer pauses to simulate distractions
+        if random.random() < 0.15:  # 15% chance of distraction
+            max_delay *= random.uniform(2.0, 4.0)
+            
+        return random.uniform(min_delay, max_delay)
 
     @property
     def base_headers(self):
@@ -146,13 +193,9 @@ class PrivateRequestMixin:
             "X-Pigeon-Session-Id": self.generate_uuid("UFS-", "-1"),
             "X-Pigeon-Rawclienttime": str(round(time.time(), 3)),
             # "X-IG-Connection-Speed": "-1kbps",
-            "X-IG-Bandwidth-Speed-KBPS": str(
-                random.randint(2500000, 3000000) / 1000
-            ),  # "-1.000"
-            "X-IG-Bandwidth-TotalBytes-B": str(
-                random.randint(5000000, 90000000)
-            ),  # "0"
-            "X-IG-Bandwidth-TotalTime-MS": str(random.randint(2000, 9000)),  # "0"
+            "X-IG-Bandwidth-Speed-KBPS": str(self.get_realistic_bandwidth()),
+            "X-IG-Bandwidth-TotalBytes-B": str(self.get_realistic_total_bytes()),
+            "X-IG-Bandwidth-TotalTime-MS": str(self.get_realistic_total_time()),
             # "X-IG-EU-DC-ENABLED": "true", # <- type of DC? Eu is euro, but we use US
             # "X-IG-Prefetch-Request": "foreground",  # OLD from instabot
             "X-IG-App-Startup-Country": self.country.upper(),
@@ -165,7 +208,7 @@ class PrivateRequestMixin:
             "X-IG-Family-Device-ID": self.phone_id,
             "X-IG-Android-ID": self.android_device_id,
             "X-IG-Timezone-Offset": str(self.timezone_offset),
-            "X-IG-Connection-Type": "WIFI",
+            "X-IG-Connection-Type": self.connection_type,
             "X-IG-Capabilities": "3brTvx0=",  # "3brTvwE=" in instabot
             "X-IG-App-ID": self.app_id,
             "Priority": "u=3",
@@ -292,6 +335,88 @@ class PrivateRequestMixin:
     def set_ig_www_claim(self, value):
         self.settings["ig_www_claim"] = self.ig_www_claim = value
         return True
+
+    def set_connection_type(self, conn_type: str = None) -> bool:
+        """Set connection type for realistic network simulation
+        
+        Parameters
+        ----------
+        conn_type: str, optional
+            Connection type ("WIFI", "4G", "5G")
+            
+        Returns
+        -------
+        bool
+            A boolean value
+        """
+        if conn_type is None:
+            # Randomly select connection type with realistic distribution
+            conn_type = random.choices(
+                ["WIFI", "4G", "5G"], 
+                weights=[70, 25, 5]  # WIFI most common, 5G still rare
+            )[0]
+        self.connection_type = conn_type
+        return True
+    
+    def get_realistic_bandwidth(self) -> float:
+        """Generate realistic bandwidth based on connection type
+        
+        Returns
+        -------
+        float
+            Bandwidth in KBPS
+        """
+        if self.connection_type not in config.CONNECTION_TYPES:
+            self.set_connection_type()
+            
+        conn_config = config.CONNECTION_TYPES[self.connection_type]
+        bandwidth_range = conn_config["bandwidth_range"]
+        return random.randint(*bandwidth_range) / 1000
+    
+    def get_realistic_total_bytes(self) -> int:
+        """Generate realistic total bytes based on connection type
+        
+        Returns
+        -------
+        int
+            Total bytes transferred
+        """
+        if self.connection_type not in config.CONNECTION_TYPES:
+            self.set_connection_type()
+            
+        conn_config = config.CONNECTION_TYPES[self.connection_type]
+        bytes_range = conn_config["total_bytes_range"]
+        return random.randint(*bytes_range)
+    
+    def get_realistic_total_time(self) -> int:
+        """Generate realistic total time based on connection type
+        
+        Returns
+        -------
+        int
+            Total time in milliseconds
+        """
+        if self.connection_type not in config.CONNECTION_TYPES:
+            self.set_connection_type()
+            
+        conn_config = config.CONNECTION_TYPES[self.connection_type]
+        time_range = conn_config["total_time_range"]
+        return random.randint(*time_range)
+    
+    def get_realistic_latency(self) -> int:
+        """Generate realistic latency based on connection type
+        
+        Returns
+        -------
+        int
+            Latency in milliseconds
+        """
+        if self.connection_type not in config.CONNECTION_TYPES:
+            self.set_connection_type()
+            
+        conn_config = config.CONNECTION_TYPES[self.connection_type]
+        latency_range = conn_config["latency_range"]
+        return random.randint(*latency_range)
 
     @staticmethod
     def with_query_params(data, params):
