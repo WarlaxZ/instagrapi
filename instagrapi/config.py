@@ -72,7 +72,8 @@ SUPPORTED_CAPABILITIES = [
 # Realistic device profiles with proper correlations
 app_version = "399.0.0.51.85" # TODO I added, was 269.0.0.18.75
 app_version_code = "380507043" # TODO I added, was 314665256
-# TODO TODO - The version strings and devices are wrong here and could do with improving
+# https://apkpure.net/instagram-android/com.instagram.android/versions
+# TODO TODO - The devices are wrong here and could do with improving
 REALISTIC_DEVICES = [
     {
         "app_version": app_version,
