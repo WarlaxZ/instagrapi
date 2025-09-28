@@ -1,4 +1,5 @@
 import base64
+import datetime
 import hashlib
 import hmac
 import json
@@ -209,7 +210,7 @@ class PostLoginFlowMixin:
             "X-Ads-Opt-Out": "0",
             "X-DEVICE-ID": self.uuid,
             "X-CM-Bandwidth-KBPS": "-1.000",  # str(random.randint(2000, 5000)),
-            "X-CM-Latency": str(random.randint(1, 5)),
+            "X-CM-Latency": str(self.get_realistic_latency()),
         }
         data = {
             "has_camera_permission": "1",
@@ -217,14 +218,14 @@ class PostLoginFlowMixin:
             # "media_pct":1.0,"time_info":{"10":63124,"25":63124,"50":63124,"75":63124},"latest_timestamp":1628253523186}]
             "phone_id": self.phone_id,
             "reason": reason,
-            "battery_level": 100,  # Random battery level is not simulating real bahaviour
+            "battery_level": self.get_realistic_battery_level(),
             "timezone_offset": str(self.timezone_offset),
             # "_csrftoken": self.token, No longer in data
             "device_id": self.uuid,
             "request_id": self.request_id,
             "_uuid": self.uuid,
-            "is_charging": random.randint(0, 1),
-            "is_dark_mode": 1,  # Random dark mode is not simulating real bahaviour
+            "is_charging": self.get_realistic_charging_state(),
+            "is_dark_mode": self.get_realistic_dark_mode(),
             "will_sound_on": random.randint(0, 1),
             "session_id": self.client_session_id,
             "bloks_versioning_id": self.bloks_versioning_id,
@@ -326,7 +327,18 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         self.set_timezone_offset(
             self.settings.get("timezone_offset", self.timezone_offset)
         )
+        
+        # Set geographic region if not already configured
+        if not self.settings.get("geographic_region_set"):
+            self.set_geographic_region()
+            self.settings["geographic_region_set"] = True
+            
         self.set_device(self.settings.get("device_settings"))
+        
+        # Set connection type if not already configured  
+        if not self.settings.get("connection_type_set"):
+            self.set_connection_type()
+            self.settings["connection_type_set"] = True
         # c7aeefd59aab78fc0a703ea060ffb631e005e2b3948efb9d73ee6a346c446bf3
         self.bloks_versioning_id = (
             "ce555e5500576acd8e84a66018f54a05720f2dce29f0bb5a1f97f0c10d6fac48"
@@ -652,18 +664,10 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         bool
             A boolean value
         """
-        self.device_settings = device or {
-            "app_version": "269.0.0.18.75",
-            "android_version": 26,
-            "android_release": "8.0.0",
-            "dpi": "480dpi",
-            "resolution": "1080x1920",
-            "manufacturer": "OnePlus",
-            "device": "devitron",
-            "model": "6T Dev",
-            "cpu": "qcom",
-            "version_code": "314665256",
-        }
+        if device is None:
+            # Select random realistic device from pool
+            device = random.choice(config.REALISTIC_DEVICES)
+        self.device_settings = device
         self.settings["device_settings"] = self.device_settings
         if reset:
             self.set_uuids({})
@@ -731,6 +735,122 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         """
         return f"{prefix}{uuid.uuid4()}{suffix}"
 
+    def get_realistic_battery_level(self) -> int:
+        """
+        Generate realistic battery level based on time of day
+        
+        Returns
+        -------
+        int
+            Battery level percentage (20-100)
+        """
+        current_hour = datetime.datetime.now().hour
+        
+        # Night time (11 PM - 6 AM) - likely higher battery if charging overnight
+        if 23 <= current_hour or current_hour <= 6:
+            return random.randint(85, 100)
+        # Morning (6 AM - 12 PM) - starting high, gradually decreasing
+        elif 6 <= current_hour <= 12:
+            return random.randint(70, 95)
+        # Afternoon (12 PM - 6 PM) - moderate usage
+        elif 12 <= current_hour <= 18:
+            return random.randint(45, 80)
+        # Evening (6 PM - 11 PM) - heavier usage, lower battery
+        else:
+            return random.randint(25, 70)
+    
+    def get_realistic_charging_state(self) -> int:
+        """
+        Generate realistic charging state based on battery level and time
+        
+        Returns
+        -------
+        int
+            Charging state (0 or 1)
+        """
+        battery_level = self.get_realistic_battery_level()
+        current_hour = datetime.datetime.now().hour
+        
+        # More likely to be charging if battery is low
+        if battery_level < 30:
+            return random.choice([1, 1, 1, 0])  # 75% chance charging
+        # Night time charging is common
+        elif 23 <= current_hour or current_hour <= 6:
+            return random.choice([1, 1, 0])  # 67% chance charging
+        # Day time - usually not charging
+        else:
+            return random.choice([0, 0, 0, 1])  # 25% chance charging
+    
+    def get_realistic_dark_mode(self) -> int:
+        """
+        Generate realistic dark mode preference
+        
+        Returns
+        -------
+        int
+            Dark mode state (0 or 1)
+        """
+        current_hour = datetime.datetime.now().hour
+        
+        # More likely to use dark mode during evening/night
+        if 19 <= current_hour or current_hour <= 7:
+            return random.choice([1, 1, 0])  # 67% dark mode
+        else:
+            return random.choice([0, 1, 1])  # 33% dark mode
+
+    def set_geographic_region(self, region: str = None) -> bool:
+        """
+        Set geographic region with consistent locale, timezone, and country settings
+        
+        Parameters
+        ----------
+        region: str, optional
+            Region code (US, GB, DE, FR, CA, AU)
+            
+        Returns
+        -------
+        bool
+            A boolean value
+        """
+        if region is None:
+            # Randomly select region with realistic distribution
+            region = random.choices(
+                list(config.GEOGRAPHIC_REGIONS.keys()),
+                weights=[40, 15, 10, 8, 12, 15]  # US most common, then others
+            )[0]
+            
+        if region not in config.GEOGRAPHIC_REGIONS:
+            region = "US"  # Default fallback
+            
+        region_config = config.GEOGRAPHIC_REGIONS[region]
+        
+        # Set consistent geographic properties
+        self.set_country(region_config["country"])
+        self.set_country_code(region_config["country_code"])
+        self.set_locale(region_config["locale"])
+        
+        # Set timezone appropriate for region
+        timezone_offset = random.choice(region_config["timezone_offsets"])
+        self.set_timezone_offset(timezone_offset)
+        
+        return True
+
+    def get_realistic_user_agent_locale(self) -> str:
+        """
+        Get realistic user agent locale based on region
+        
+        Returns
+        -------
+        str
+            Locale string for user agent
+        """
+        # Find region based on current country
+        for region, config_data in config.GEOGRAPHIC_REGIONS.items():
+            if config_data["country"] == self.country:
+                languages = config_data["languages"]
+                return random.choice(languages)
+        return "en-US"  # Default fallback
+
     def generate_mutation_token(self) -> str:
         """
         Token used when DM sending and upload media
@@ -744,14 +864,18 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
 
     def generate_android_device_id(self) -> str:
         """
-        Helper to generate Android Device ID
+        Helper to generate Android Device ID with device-specific entropy
 
         Returns
         -------
         str
-            A random android device id
+            A realistic android device id
         """
-        return "android-%s" % hashlib.sha256(str(time.time()).encode()).hexdigest()[:16]
+        # Use device properties + system entropy for more realistic ID
+        device_info = f"{self.device_settings.get('manufacturer', 'Generic')}{self.device_settings.get('model', 'Device')}"
+        entropy = f"{time.time()}{random.randint(1000000, 9999999)}{self.uuid}"
+        combined = hashlib.sha256(f"{device_info}{entropy}".encode()).hexdigest()
+        return f"android-{combined[:16]}"
 
     def expose(self) -> Dict:
         """
