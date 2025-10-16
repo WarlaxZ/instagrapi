@@ -324,16 +324,30 @@ class UserMixin:
         """
         user_id = str(user_id)
         if not use_cache or user_id not in self._users_cache:
-            try:
-                try:
-                    user = self.user_info_gql(user_id)
-                except ClientLoginRequired as e:
-                    if not self.inject_sessionid_to_public():
-                        raise e
-                    user = self.user_info_gql(user_id)  # retry
-            except Exception as e:
-                if not isinstance(e, ClientError):
-                    self.logger.exception(e)
+            # TODO TODO Temp disabled this as the graphql endpoint is broken:
+# Traceback (most recent call last):
+#  File "instagrapi/mixins/user.py", line 272, in user_info
+#    user = self.user_info_gql(user_id)
+#  File "instagrapi/mixins/user.py", line 222, in user_info_gql
+#    self.username_from_user_id_gql(user_id)
+#  File "instagrapi/mixins/user.py", line 102, in username_from_user_id_gql
+#    return self.user_short_gql(user_id).username
+#  File "instagrapi/mixins/user.py", line 75, in user_short_gql
+#    data = self.public_graphql_request(
+#  File "instagrapi/mixins/public.py", line 275, in public_graphql_request
+#    return body_json["data"]
+# KeyError: 'data'
+            # try:
+            #     try:
+            #         user = self.user_info_gql(user_id)
+            #     except ClientLoginRequired as e:
+            #         if not self.inject_sessionid_to_public():
+            #             raise e
+            #         user = self.user_info_gql(user_id)  # retry
+            # except Exception as e:
+            #     if not isinstance(e, ClientError):
+            #         self.logger.exception(e)
+            if True:
                 user = self.user_info_v1(user_id)
             self._users_cache[user_id] = user
             self._usernames_cache[user.username] = user.pk
