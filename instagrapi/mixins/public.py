@@ -278,6 +278,11 @@ class PublicRequestMixin:
                     response=body_json,
                 )
 
+            error_msg = body_json.get("errors", [{}])[0].get("description", None)
+            if error_msg is not None:
+                # TODO - should we raise here? As technically it means this endpoint is broken?
+                self.public_request_logger.error("Issue making request: %s", error_msg)
+                return None
             return body_json["data"]
 
         except ClientBadRequestError as e:
